@@ -1,16 +1,16 @@
-java.handlebars
+Java Handlebars
 ===============
 
 A Java implementation of the [Handlebars] templating language. 
 
-This project began as a small component of a Java webserver, but is complete enough to use wherever Handlebars-style template parsing is desired. Documentation and feature changes are currently in progress.
+This project began as a small component of a Java webserver, but is complete enough to use wherever Handlebars-style template parsing is desired. Documentation, examples, and feature changes are currently in progress.
 
 This implementation comes with two components:
 
 * Handlebars template parser
-* JSON wrapper
+* JSON class to store template data
 
-Built-in functions:
+#### Built-in functions:
 
 ###### Handlebars:
 
@@ -30,7 +30,7 @@ Built-in functions:
 
 Helper functions may be defined with
 ```java
-registerHelper(String name, IHelper f)
+Helpers.registerHelper(String name, IHelper f)
 ```
 where `name` is the name of the function, and `f` is the function definition. Helpers functions implement the `IHelper` class and have full access to the internals of the parser.
 
