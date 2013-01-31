@@ -29,44 +29,47 @@ Built-in functions:
 #### Defining Additional Functions
 
 Helper functions may be defined with
-
-	registerHelper(String name, IHelper f)
-
+```java
+registerHelper(String name, IHelper f)
+```
 where `name` is the name of the function, and `f` is the function definition. Helpers functions implement the `IHelper` class and have full access to the internals of the parser.
 
 For example, the definition of the `if` helper:
 
-	private static class If implements IHelper {
 
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
-			String output = "";
+```java
+private static class If implements IHelper {
 
-			// First, look up the name of the identifier in j, the current JSON context
-			JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
+	public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		String output = "";
 
-			// Next, test the value for "truthiness".
-			// If the value is truthy, parse the "if" portion of the this block
-			if (v != null && v.toString() != null && ! v.toString().equals("0")) {
-				for (ASTNode child : n.children) {
-					if (child.t.type == Type.Simple && child.t.tag.equals("else"))
-						break;
-					output += Parser.parse(stack, j, child);
-				}
+		// First, look up the name of the identifier in j, the current JSON context
+		JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
 
-			// Otherwise, parse the "else" portion of this block, if one exists
-			} else {
-				// Search for an {{else}}, output any children after it's found
-				Boolean found = false;
-				for (ASTNode child : n.children) {
-					if (found)
-						output += Parser.parse(stack, j, child);
-					if (! found && child.t.type == Type.Simple && child.t.tag.equals("else"))
-						found = true;
-				}
+		// Next, test the value for "truthiness".
+		// If the value is truthy, parse the "if" portion of the this block
+		if (v != null && v.toString() != null && ! v.toString().equals("0")) {
+			for (ASTNode child : n.children) {
+				if (child.t.type == Type.Simple && child.t.tag.equals("else"))
+					break;
+				output += Parser.parse(stack, j, child);
 			}
-			return output;
+
+		// Otherwise, parse the "else" portion of this block, if one exists
+		} else {
+			// Search for an {{else}}, output any children after it's found
+			Boolean found = false;
+			for (ASTNode child : n.children) {
+				if (found)
+					output += Parser.parse(stack, j, child);
+				if (! found && child.t.type == Type.Simple && child.t.tag.equals("else"))
+					found = true;
+			}
 		}
+		return output;
 	}
+}
+```
 
 ##### Note:
 
