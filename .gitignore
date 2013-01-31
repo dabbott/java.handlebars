@@ -1,6 +1,14 @@
 *.class
 
+# Temporary... #
+examples
+
 # Package Files #
 *.jar
 *.war
 *.ear
+
+# Eclipse settings #
+.classpath
+.project
+
