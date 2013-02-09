@@ -1,4 +1,4 @@
-package template;
+package com.devinabbott.handlebars;
 
 import java.util.ArrayList;
 

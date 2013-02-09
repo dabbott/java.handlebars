@@ -1,4 +1,4 @@
-package template;
+package com.devinabbott.handlebars;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -7,9 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Stack;
 
-import json.JObject;
-import json.JSON;
-import json.JString;
+import org.json.simple.JSONObject;
 
 /** 
  * @author devinabbott
@@ -77,44 +75,45 @@ public class Parser {
 	}
 	
 	public String parse() {
-		return parse(new JObject());
+		return parse(new JSONObject());
 	}
 	
-	public String parse(JSON j) {
-		return parse(new Stack<JObject>(), j);
+	public String parse(Object j) {
+		return parse(new Stack<JSONObject>(), j);
 	}
 	
-	public String parse(Stack<JObject> stack, JSON j) {
+	public String parse(Stack<JSONObject> stack, Object j) {
 		// Save the AST so we only tokenize/lex once.
 		if (ast == null) 
 			lex();
 		return parse(stack, j, ast.root);
 	}
 	
-	public static JSON lookup(Stack<JObject> stack, JSON j, String k) {
+	public static Object lookup(Stack<JSONObject> stack, Object j, String k) {
 		
 		if (k.equals("this")) {
 			System.out.println(k + " found");
 			return j;
 		}
 
-		JSON v = null;
-		if (JObject.class.isAssignableFrom(j.getClass())) {
-			JObject obj = (JObject) j;
+		Object v = null;
+		if (JSONObject.class.isAssignableFrom(j.getClass())) {
+			JSONObject obj = (JSONObject) j;
+//			v = obj.get(k);
 			v = obj.get(k);
 		}
 		
-		if (v == null) {
-			// Check parent scope for variable
-			if (j.parent != null)
-				return lookup(stack, j.parent, k);
-			else {
-				// If no more parents, try the stack 
-				v = searchStack(stack, k);
-				if (v == null && Helpers.hasHelper(k))
-					return new JString(Helpers.apply(k, j, null, stack));
-			}
-		}
+//		if (v == null) {
+//			// Check parent scope for variable
+//			if (j.parent != null)
+//				return lookup(stack, j.parent, k);
+//			else {
+//				// If no more parents, try the stack 
+//				v = searchStack(stack, k);
+//				if (v == null && Helpers.hasHelper(k))
+//					return new JString(Helpers.apply(k, j, null, stack));
+//			}
+//		}
 		
 		return v;
 	}
@@ -124,9 +123,9 @@ public class Parser {
 	 * @param k name
 	 * @return JSON object
 	 */
-	public static JSON searchStack(Stack<JObject> stack, String k) {
-		JObject scope = null;
-		JSON v = null;
+	public static Object searchStack(Stack<JSONObject> stack, String k) {
+		JSONObject scope = null;
+		Object v = null;
 		for (int i = stack.size() - 1; i >= 0; i--) {
 			scope = stack.get(i);
 			if ((v = scope.get(k)) != null) {
@@ -136,7 +135,7 @@ public class Parser {
 		return v;
 	}
 	
-	public static String parse(Stack<JObject> stack, JSON j, ASTNode n) {
+	public static String parse(Stack<JSONObject> stack, Object j, ASTNode n) {
 		String output = "";
 		Token t = n.t;
 		switch (t.type) {
@@ -147,7 +146,7 @@ public class Parser {
 				output += parseRoot(stack, j, n);
 				break;
 			case Block:
-				stack.push(new JObject());
+				stack.push(new JSONObject());
 				output += parseBlock(stack, j, n);
 				stack.pop();
 				break;
@@ -163,7 +162,7 @@ public class Parser {
 		return output;
 	}
 	
-	public static String parseRoot(Stack<JObject> stack, JSON j, ASTNode n) {
+	public static String parseRoot(Stack<JSONObject> stack, Object j, ASTNode n) {
 		String output = "";
 		for (ASTNode child : n.children) {
 			output += parse(stack, j, child);
@@ -171,7 +170,7 @@ public class Parser {
 		return output;
 	}
 	
-	public static String parseChildren(Stack<JObject> stack, JSON j, ASTNode n) {
+	public static String parseChildren(Stack<JSONObject> stack, Object j, ASTNode n) {
 		String output = "";
 		for (ASTNode child : n.children) {
 			output += parse(stack, j, child);
@@ -179,18 +178,18 @@ public class Parser {
 		return output;
 	}
 	
-	public static String parseFunction(Stack<JObject> stack, JSON j, ASTNode n) {
+	public static String parseFunction(Stack<JSONObject> stack, Object j, ASTNode n) {
 		return Helpers.apply(n.t.tag, j, n, stack);
 	}
 	
-	public static String parseBlock(Stack<JObject> stack, JSON j, ASTNode n) {
+	public static String parseBlock(Stack<JSONObject> stack, Object j, ASTNode n) {
 		// At the moment, blocks are the same as functions
 //		System.out.println("Entering block " + n.t.tag);
 		return parseFunction(stack, j, n);
 	}
 	
-	public static String parseSimple(Stack<JObject> stack, JSON j, Token t) {
-		JSON v = lookup(stack, j, t.tag);
+	public static String parseSimple(Stack<JSONObject> stack, Object j, Token t) {
+		Object v = lookup(stack, j, t.tag);
 		if (v == null)
 			return "undefined";
 		return v.toString();

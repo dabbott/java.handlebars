@@ -1,4 +1,4 @@
-package template;
+package com.devinabbott.handlebars;
 
 public enum Type {
 	Unknown,

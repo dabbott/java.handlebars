@@ -1,11 +1,9 @@
-package template;
+package com.devinabbott.handlebars;
 
 import java.util.HashMap;
 import java.util.Stack;
-import json.JArray;
-import json.JObject;
-import json.JSON;
-import json.JString;
+
+import org.json.simple.*;
 
 /**
  * Static collection of Helper objects.
@@ -39,8 +37,7 @@ public class Helpers {
 		return helpers.containsKey(name);
 	}
 	
-	public static String apply(String name, JSON j,
-			ASTNode n, Stack<JObject> stack) {
+	public static String apply(String name, Object j, ASTNode n, Stack<JSONObject> stack) {
 		IHelper f = helpers.get(name);
 		String result = null; 
 		if (f != null)
@@ -54,9 +51,10 @@ public class Helpers {
 	 * Simply set the current scope
 	 */
 	private static class With implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
-			JSON newScope = Parser.lookup(stack, j, n.args.get(0).t.tag);
-			return Parser.parseChildren(stack, newScope, n);
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
+			Object newScope = Parser.lookup(stack, j, n.args.get(0).t.tag);
+			// TODO, Object may not be JSONObject?
+			return Parser.parseChildren(stack, (JSONObject) newScope, n);
 		}
 	}
 
@@ -64,10 +62,11 @@ public class Helpers {
 	 * Iterate over each object in an array
 	 */
 	private static class Each implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
 			String output = "";
-			JArray arr = (JArray) Parser.lookup(stack, j, n.args.get(0).t.tag);
-			for (JSON v : arr.a) {
+			JSONArray arr = (JSONArray) Parser.lookup(stack, j, n.args.get(0).t.tag);
+			for (int i = 0; i < arr.size(); i++) {
+				Object v = arr.get(i);
 				System.out.println(v);
 				output += Parser.parseChildren(stack, v, n);				
 			}
@@ -80,25 +79,25 @@ public class Helpers {
 	 * $index, $first, $last, and $only
 	 */
 	private static class EachIndex implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
 			String output = "";
-			JObject top = stack.peek();
-			JArray arr = (JArray) Parser.lookup(stack, j, n.args.get(0).t.tag);
-			for (int i = 0; i < arr.a.size(); i++) {
-				top.set("$index", new JString("" + i));
+			JSONObject top = stack.peek();
+			JSONArray arr = (JSONArray) Parser.lookup(stack, j, n.args.get(0).t.tag);
+			for (int i = 0; i < arr.size(); i++) {
+				top.put("$index", new String("" + i));
 				if (i == 0)
-					top.set("$first", "true");
+					top.put("$first", true);
 				else
-					top.unset("$first");
-				if (i == arr.a.size() - 1)
-					top.set("$last",  "true");
+					top.remove("$first");
+				if (i == arr.size() - 1)
+					top.put("$last",  true);
 				else
-					top.unset("$last");
-				if (arr.a.size() == 1)
-					top.set("$only", "true");
-				output += Parser.parseChildren(stack, arr.a.get(i), n);				
+					top.remove("$last");
+				if (arr.size() == 1)
+					top.put("$only", "true");
+				output += Parser.parseChildren(stack, arr.get(i), n);				
 			}
-			top.unset("$only");
+			top.remove("$only");
 			return output;
 		}
 	}
@@ -107,13 +106,15 @@ public class Helpers {
 	 * If with optional else clause
 	 */
 	private static class If implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
 			String output = "";
-			JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
+			Object v = Parser.lookup(stack, j, n.args.get(0).t.tag);
 			// If there's no key, lookup simply returns null
 			// However, a stored <key, null> requires the .toString()
 			// because it was created as a new JString(null)
-			if (v != null && v.toString() != null && ! v.toString().equals("0")) {
+			System.out.println(v);
+//			if (v != null && v.toString() != null && ! v.toString().equals("0")) {
+			if (Utils.isTruthy(v)) {
 				for (ASTNode child : n.children) {
 					if (child.t.type == Type.Simple && child.t.tag.equals("else"))
 						break;
@@ -137,9 +138,9 @@ public class Helpers {
 	 * Compare variable with a string constant
 	 */
 	private static class EqConst implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
 			String output = "";
-			JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
+			Object v = Parser.lookup(stack, j, n.args.get(0).t.tag);
 			String userConstant = n.args.get(1).t.tag;
 //			output += "Constant: " + userConstant + " v: " + v.toString();
 			// If there's no key, lookup simply returns null
@@ -155,10 +156,10 @@ public class Helpers {
 	}
 	
 	/**
-	 * Recursively create a new parser under the current JSON scope
+	 * Recursively create a new parser under the current Object scope
 	 */
 	private static class Partial implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
 			String filename = n.args.get(0).t.tag;
 			Parser p = new Parser(filename);
 			String output = p.parse(stack, j);
@@ -168,15 +169,15 @@ public class Helpers {
 
 	
 	private static class EscapeHTML implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
-			JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
+			Object v = Parser.lookup(stack, j, n.args.get(0).t.tag);
 			return escapeHTML(v.toString());
 		}
 	}
 	
 	private static class EscapeAttr implements IHelper {
-		public String apply(Stack<JObject> stack, ASTNode n, JSON j) {
-			JSON v = Parser.lookup(stack, j, n.args.get(0).t.tag);
+		public String apply(Stack<JSONObject> stack, ASTNode n, Object j) {
+			Object v = Parser.lookup(stack, j, n.args.get(0).t.tag);
 			return escapeAttr(v.toString());
 		}
 	}

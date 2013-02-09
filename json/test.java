@@ -1,6 +1,6 @@
 package json;
 
-import template.Parser;
+import com.devinabbott.handlebars.Parser;
 
 public class test {
 	

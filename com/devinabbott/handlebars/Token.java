@@ -1,4 +1,4 @@
-package template;
+package com.devinabbott.handlebars;
 
 public class Token {
 	 public int start;
