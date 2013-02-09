@@ -92,7 +92,7 @@ public class Parser {
 	public static Object lookup(Stack<JSONObject> stack, Object j, String k) {
 		
 		if (k.equals("this")) {
-			System.out.println(k + " found");
+			System.out.println("this found");
 			return j;
 		}
 
@@ -101,6 +101,15 @@ public class Parser {
 			JSONObject obj = (JSONObject) j;
 //			v = obj.get(k);
 			v = obj.get(k);
+		}
+		
+		// Check the object stack
+		if (v == null) {
+			v = searchStack(stack, k);
+			
+			// If stack lookup fails, check for a helper and apply it
+			if (v == null && Helpers.hasHelper(k))
+				return Helpers.apply(k, j, null, stack);
 		}
 		
 //		if (v == null) {
