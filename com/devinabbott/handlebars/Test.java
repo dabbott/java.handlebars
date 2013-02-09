@@ -27,7 +27,7 @@ public class Test {
 		System.out.println(j.toString());
 		
 		Parser p = new Parser();
-		p.data = "<h1>{{#eachIndex array}}\n<p>{{$index}}</p>{{/eachIndex}}\n</h1>";
+		p.data = "<h1>{{#array}}{{ok}}{{/array}}</h1>";
 		String output = p.parse(j);
 		System.out.println(output);
 	}

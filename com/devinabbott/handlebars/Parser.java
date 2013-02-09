@@ -179,6 +179,7 @@ public class Parser {
 		return output;
 	}
 	
+	// TODO, isn't this exactly the same as parseRoot?
 	public static String parseChildren(Stack<JSONObject> stack, Object j, ASTNode n) {
 		String output = "";
 		for (ASTNode child : n.children) {

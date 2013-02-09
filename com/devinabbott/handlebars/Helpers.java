@@ -36,14 +36,31 @@ public class Helpers {
 	public static Boolean hasHelper(String name) {
 		return helpers.containsKey(name);
 	}
+
+	// Should this go in parser?
+	// Since helpers are known before parsing starts, we can determine which blocks are not helpers
+	public static String evalBlock(String name, Object j, ASTNode n, Stack<JSONObject> stack) {
+		Boolean negated = name.startsWith("^");
+		String output = "";
+		Object v = Parser.lookup(stack, j, name.substring(1));
+		if (Utils.isTruthy(v) != negated) {
+			for (ASTNode child : n.children) {
+				output += Parser.parse(stack, j, child);
+			}
+		}
+		return output;
+	}
 	
 	public static String apply(String name, Object j, ASTNode n, Stack<JSONObject> stack) {
 		IHelper f = helpers.get(name);
 		String result = null; 
-		if (f != null)
+		if (f != null) {
 			result = f.apply(stack, n, j);
-		else
-			System.out.println("Helper " + name + "doesn't exist!");
+		} else {
+			result = evalBlock(name, j, n, stack);
+//			System.out.println("Helper " + name + "doesn't exist!");
+		}
+		
 		return result;
 	}
 	
@@ -188,6 +205,15 @@ public class Helpers {
     private static final String gt = "&gt;";
     private static final String quot = "&quot;";
 	
+//    var escape = {
+//    	    "&": "&amp;",
+//    	    "<": "&lt;",
+//    	    ">": "&gt;",
+//    	    '"': "&quot;",
+//    	    "'": "&#x27;",
+//    	    "`": "&#x60;"
+//    	  };
+    
 	public static String escapeHTML(String in) {
 		StringBuilder s = new StringBuilder();
 		for (int i = 0; i < in.length(); i++) {

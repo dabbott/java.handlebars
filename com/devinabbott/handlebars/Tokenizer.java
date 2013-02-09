@@ -28,7 +28,7 @@ public class Tokenizer {
 				
 				String tag = data.substring(pos, endBrace);
 				
-				if (tagHas(tag, "#")) {
+				if (tagHas(tag, "#") || tagHas(tag, "^")) {
 					splitTokens(tokenStream, tag, pos, Type.Block, Type.BlockClose);
 				} else if (tagHas(tag, "/")) {
 					tokenStream.add(new Token(pos, pos + tag.length(), tag, Type.EndBlock));
